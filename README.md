@@ -2,20 +2,6 @@
 
 A modern, AI-powered recruitment platform that automates the interview process using voice-based AI agents. Built with Next.js, Supabase, and cutting-edge AI technologies.
 
-## 📸 Screenshots
-
-### Homepage
-![AI Recruiter Homepage](public/ai1.png)
-
-## 📸 Screenshots
-
-### Recruiter Dashboard
-![AI Recruiter Dashboard](public/ai2.png)
-
-## 📸 Screenshots
-
-### Condidate Dashboard
-![AI Recruiter Homepage](public/ai3.png)
 
 ## 🚀 Features
 
@@ -26,19 +12,6 @@ A modern, AI-powered recruitment platform that automates the interview process u
 - **Credit System**: Pay-per-interview model with flexible credit packages
 - **Dashboard Analytics**: Track interview performance and candidate metrics
 - **User Management**: Manage candidates, view results, and export data
-
-### For Candidates
-- **Seamless Interview Experience**: Join interviews via unique links
-- **Voice Interaction**: Natural conversation with AI interviewer
-- **Instant Feedback**: Receive detailed feedback and scoring immediately
-- **Profile Management**: Upload CV, manage personal information
-- **Interview History**: View past interviews and results
-
-### For Administrators
-- **User Management**: Ban/unban users, manage accounts
-- **System Monitoring**: View all interviews and system statistics
-- **Data Export**: Export user and interview data
-- **Platform Control**: Full administrative control
 
 ## 🛠 Tech Stack
 
@@ -291,9 +264,6 @@ The app can be deployed to any platform that supports Next.js:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 🆘 Support
-
-For support, email support@ai-recruiter.com or join our Slack channel.
 
 ## 🙏 Acknowledgments
 
