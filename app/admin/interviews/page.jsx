@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Copy, Send, Trash2 } from "lucide-react";
 import moment from "moment";
