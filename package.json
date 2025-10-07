@@ -2,10 +2,12 @@
   "name": "ai-agent",
   "version": "0.1.0",
   "private": true,
-  "scripts": { "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
+  "scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start -p $PORT"
+}
+,
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@lottiefiles/dotlottie-react": "^0.13.3",
