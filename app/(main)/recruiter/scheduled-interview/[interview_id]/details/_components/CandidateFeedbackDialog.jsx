@@ -1,4 +1,22 @@
+import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+
 export default function CandidateListFeedbackDialog({ candidate }) {
+  // 👇 ADD THIS — it shows you exactly what data you are getting
+  console.log("CANDIDATE DATA:", candidate);
+  console.log("TRANSCRIPT:", candidate?.conversationTranscript);
+  console.log("FEEDBACK RAW:", candidate?.conversationTranscript?.feedback);
+
+  // --- Candidate name ---
   const candidateName =
     candidate?.fullname ||
     candidate?.fullName ||
@@ -6,14 +24,14 @@ export default function CandidateListFeedbackDialog({ candidate }) {
     candidate?.email ||
     "Unnamed Candidate";
 
-  // --- Feedback extraction ---
+  // --- Extract feedback safely ---
   let feedback = candidate?.conversationTranscript?.feedback || {};
 
   if (typeof feedback === "string") {
     try {
       feedback = JSON.parse(feedback);
     } catch (e) {
-      console.error("Error parsing feedback JSON:", e);
+      console.error("Error parsing feedback JSON:", e, feedback);
       feedback = {};
     }
   }
@@ -21,12 +39,22 @@ export default function CandidateListFeedbackDialog({ candidate }) {
   // --- Ratings ---
   const rawRating = feedback?.rating || {};
   const rating = {
-    TechnicalSkills: rawRating?.TechnicalSkills ?? 0,
-    Communication: rawRating?.Communication ?? 0,
-    ProblemSolving: rawRating?.ProblemSolving ?? 0,
-    Experience: rawRating?.Experience ?? 0,
-    Behavioral: rawRating?.Behavioral ?? 0,
-    Analysis: rawRating?.Analysis ?? 0,
+    TechnicalSkills:
+      rawRating?.TechnicalSkills ||
+      rawRating?.technicalSkills ||
+      rawRating?.technical_skills ||
+      rawRating?.technical ||
+      0,
+    Communication:
+      rawRating?.Communication || rawRating?.communication || 0,
+    ProblemSolving:
+      rawRating?.ProblemSolving ||
+      rawRating?.problemSolving ||
+      rawRating?.problem_solving ||
+      0,
+    Experience: rawRating?.Experience || rawRating?.experience || 0,
+    Behavioral: rawRating?.Behavioral || rawRating?.behavioral || 0,
+    Analysis: rawRating?.Analysis || rawRating?.analysis || 0,
   };
 
   // --- Summary ---
@@ -40,12 +68,17 @@ export default function CandidateListFeedbackDialog({ candidate }) {
       ? summaryText
       : [];
 
-  // --- Recommendation message ---
+  // --- Recommendation ---
   const recommendationMessage =
     feedback?.["Recommendation Message"] ||
     feedback?.RecommendationMessage ||
     feedback?.recommendationMessage ||
+    feedback?.recommendation_message ||
     "No recommendation message provided";
+
+  const recommendationText =
+    feedback?.Recommendation || feedback?.recommendation || "Recommendation";
+  const isRecommended = recommendationText.toLowerCase().includes("yes");
 
   // --- Overall score ---
   const ratings = Object.values(rating).filter(
@@ -56,10 +89,6 @@ export default function CandidateListFeedbackDialog({ candidate }) {
       ? Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)
       : 0;
 
-  const isRecommended = (feedback?.Recommendation || "")
-    .toLowerCase()
-    .includes("yes");
-
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -67,6 +96,7 @@ export default function CandidateListFeedbackDialog({ candidate }) {
           View Report
         </Button>
       </DialogTrigger>
+
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Feedback Report</DialogTitle>
@@ -127,7 +157,7 @@ export default function CandidateListFeedbackDialog({ candidate }) {
                 </div>
               </div>
 
-              {/* Recommendation Section */}
+              {/* Recommendation */}
               <div
                 className={`p-5 rounded-md ${
                   isRecommended
@@ -141,7 +171,7 @@ export default function CandidateListFeedbackDialog({ candidate }) {
                       isRecommended ? "text-green-700" : "text-red-700"
                     }`}
                   >
-                    {feedback?.Recommendation || "Recommendation"}
+                    {recommendationText}
                   </h2>
                   <p className="mt-2 whitespace-pre-wrap text-gray-700">
                     {recommendationMessage}

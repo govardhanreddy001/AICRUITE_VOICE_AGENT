@@ -22,7 +22,7 @@ export async function POST(req) {
         apiKey: process.env.OPENROUTER_API_KEY,
       })
       const completion = await openai.chat.completions.create({
-        model: "deepseek/deepseek-r1:free",
+        model: "deepseek/deepseek-r1",
         messages: [
           { role: "user", content: FINAL_PROMPT }
         ],
