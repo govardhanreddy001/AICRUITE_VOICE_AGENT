@@ -9,19 +9,61 @@ import { toast } from 'sonner';
 const InterviewLink = ({ interview_id, formData }) => {
   const router = useRouter();
 
-  // Always point to /interview/:id
   const baseUrl = process.env.NEXT_PUBLIC_HOST_URL?.replace(/\/$/, '') || "http://localhost:3000";
   const url = `${baseUrl}/interview/${interview_id}`;
 
   const getInterviewURL = () => url;
 
+  // ------------------------------
+  // FORCE DATE INTO INDIAN TIME (IST)
+  // ------------------------------
+  const parseToIST = (rawDate) => {
+    if (!rawDate) return new Date();
+
+    // Convert Postgres → ISO
+    const iso = rawDate
+      .replace(" ", "T")
+      .replace(/\.\d+/, "")     // remove microseconds
+      .replace(/\+00:?00?$/, "Z"); // enforce UTC
+
+    const utcDate = new Date(iso);
+
+    // Convert UTC → IST (UTC + 5:30)
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    return new Date(utcDate.getTime() + istOffsetMs);
+  };
+
+  // ------------------------------
+  // VALID TILL DATE (IN IST)
+  // ------------------------------
   const expiresAt = () => {
-    const futureDate = new Date(
-      new Date(formData?.created_at || '2025-04-14 19:09:50.492361+00').getTime() +
-        30 * 24 * 60 * 60 * 1000
-    );
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return futureDate.toLocaleDateString('en-US', options);
+    const createdAtIST = parseToIST(formData?.created_at);
+
+    if (isNaN(createdAtIST.getTime())) return "Invalid date";
+
+    const expiryIST = new Date(createdAtIST.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    return expiryIST.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "Asia/Kolkata"
+    });
+  };
+
+  // ------------------------------
+  // DAYS LEFT (IN IST)
+  // ------------------------------
+  const daysLeft = () => {
+    const createdAtIST = parseToIST(formData?.created_at);
+    const nowIST = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000));
+
+    const expiryIST = new Date(createdAtIST.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const diffMs = expiryIST - nowIST;
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    return diffDays < 0 ? 0 : diffDays;
   };
 
   const onCopyLink = async () => {
@@ -86,8 +128,13 @@ Best regards,
       <div className='bg-white shadow rounded-lg p-7 w-full'>
         <div className='flex items-center justify-between'>
           <h2 className='font-bold'>Interview Link</h2>
-          <h2 className='text-primary bg-blue-50 rounded-xl text-sm px-2 py-1'>Valid for 30 days</h2>
+
+          {/* DAYS REMAINING BADGE */}
+          <h2 className='text-primary bg-blue-50 rounded-xl text-sm px-2 py-1'>
+            {daysLeft()} days remaining
+          </h2>
         </div>
+
         <div className='flex items-center justify-around gap-2 mt-5'>
           <Input value={getInterviewURL()} readOnly />
           <Button onClick={onCopyLink}>
