@@ -26,18 +26,22 @@ function QuestionList({ formData, onCreateLink }) {
   const GenerateQuestionList = async () => {
     setLoading(true);
     hasCalled.current = true;
-    try {
-      const result = await axios.post("/api/ai-model", {
-        ...formData,
-      });
 
-      const rawContent = result?.data?.content || result?.data?.Content;
+    try {
+      const result = await axios.post("/api/ai-model", { ...formData });
+
+      // ✅ FIX: Convert to string ALWAYS so .match() never breaks
+      const rawContent = String(
+        result?.data?.content || result?.data?.Content || ""
+      );
+
       if (!rawContent) {
         toast("Invalid response format");
         return;
       }
 
       const match = rawContent.match(/```json\s*([\s\S]*?)\s*```/);
+
       if (!match || !match[1]) {
         toast("Failed to extract question list");
         return;
@@ -45,6 +49,7 @@ function QuestionList({ formData, onCreateLink }) {
 
       const parsedData = JSON.parse(match[1].trim());
       setQuestionList(parsedData);
+
     } catch (e) {
       toast("Server Error, Try Again");
       console.error("Error generating questions:", e);
@@ -104,7 +109,6 @@ function QuestionList({ formData, onCreateLink }) {
         return;
       }
 
-      // ✅ Build payload exactly matching your `interviews` schema
       const payload = {
         interview_id,
         userEmail: user?.email,
@@ -112,18 +116,18 @@ function QuestionList({ formData, onCreateLink }) {
         jobDescription: formData?.jobDescription || null,
         duration: formData?.duration || null,
         type: formData?.type || null,
-        questionList: questionList || {}, // must be valid JSON
+        questionList: questionList || {},
       };
 
       const { data, error } = await supabase
-        .from("interviews") // ✅ lowercase
+        .from("interviews")
         .insert([payload])
         .select();
 
       if (error) {
         console.error("Supabase error:", error);
         toast("Failed to save interview");
-        await updateUserCredits(currentCredits); // revert credits
+        await updateUserCredits(currentCredits);
       } else {
         toast.success(
           `Interview saved successfully! Credit deducted. You now have ${newCredits} credits remaining.`

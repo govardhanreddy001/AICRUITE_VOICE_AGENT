@@ -1,23 +1,17 @@
+
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/services/supabaseClient';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, ArrowLeft, XCircle } from 'lucide-react';
-import moment from 'moment-timezone';   // ⭐ UPDATED
+import moment from 'moment';
 
 export default function InterviewDetailPage() {
   const router = useRouter();
   const params = useParams();
   const interviewId = params?.interview_id;
-
   const [interview, setInterview] = useState(null);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,10 +23,11 @@ export default function InterviewDetailPage() {
   const fetchDetails = async () => {
     setLoading(true);
 
+    // fetch interview by interviewId (camelCase)
     const { data: interviewData, error: interviewError } = await supabase
       .from('interviews')
       .select('*')
-      .eq('interview_id', interviewId)
+      .eq('interview_id', interviewId) // ✅ camelCase
       .single();
 
     if (interviewError) {
@@ -42,6 +37,7 @@ export default function InterviewDetailPage() {
     }
     setInterview(interviewData);
 
+    // fetch results by interviewId (camelCase)
     const { data: resultsData } = await supabase
       .from('interview_results')
       .select('*')
@@ -84,25 +80,17 @@ export default function InterviewDetailPage() {
             <Users className="w-5 h-5" />
             {interview.jobPosition || 'Untitled Interview'}
           </CardTitle>
-
           <CardDescription>
-            Created by: <span className="font-medium">{interview.userEmail}</span>
+            Created by: <span className="font-medium">{interview.userEmail || 'Unknown'}</span>
             <span className="ml-4 text-gray-500">
-              {/* ⭐ IST TIME FIX */}
-              {moment.utc(interview.created_at).tz("Asia/Kolkata").format("MMM DD, YYYY hh:mm A")}
+              {moment(interview.createdAt).format('MMM DD, YYYY HH:mm')}
             </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div>
-            <span className="font-semibold">Description:</span> {interview.jobDescription}
-          </div>
-          <div>
-            <span className="font-semibold">Interview ID:</span> {interview.interview_id}
-          </div>
-          <div>
-            <span className="font-semibold">Total Candidates:</span> {results.length}
-          </div>
+          <div><span className="font-semibold">Description:</span> {interview.jobDescription || 'No description provided.'}</div>
+          <div><span className="font-semibold">Interview ID:</span> {interview.interviewId}</div>
+          <div><span className="font-semibold">Total Candidates:</span> {results.length}</div>
         </CardContent>
       </Card>
 
@@ -112,32 +100,23 @@ export default function InterviewDetailPage() {
           <CardTitle>Candidate Results</CardTitle>
           <CardDescription>All candidates who participated in this interview</CardDescription>
         </CardHeader>
-
         <CardContent>
           {results.length === 0 ? (
             <div className="text-gray-500">No candidates have participated yet.</div>
           ) : (
             <div className="divide-y">
               {results.map((result) => {
-                let transcriptObj = null;
+                let feedback = null;
                 try {
-                  transcriptObj = result.conversationTranscript;
-                } catch {
-                  transcriptObj = null;
+                  feedback = JSON.parse(result.conversationTranscript)?.feedback;
+                } catch (e) {
+                  feedback = null;
                 }
-
-                const feedback = transcriptObj?.feedback || {};
                 const ratings = feedback?.rating || {};
-                const summary = feedback?.summery || feedback?.summary || '';
+                const summary = feedback?.summary || '';
                 const recommendation = feedback?.Recommendation || '';
-                const recommendationMsg =
-                  feedback?.RecommendationMessage ||
-                  feedback?.["Recommendation Message"] ||
-                  '';
-
-                const ratingValues = Object.values(ratings).filter(
-                  (val) => typeof val === 'number'
-                );
+                const recommendationMsg = feedback?.RecommendationMessage || '';
+                const ratingValues = Object.values(ratings).filter(val => typeof val === 'number');
                 const avgScore = ratingValues.length
                   ? (ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length).toFixed(2)
                   : 'N/A';
@@ -147,11 +126,10 @@ export default function InterviewDetailPage() {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-800">
-                          {result.fullName}
+                          {result.fullName || 'Unknown Candidate'}
                         </h3>
-                        <div className="text-xs text-gray-500">{result.email}</div>
+                        <div className="text-xs text-gray-500">{result.email || 'No email'}</div>
                       </div>
-
                       <div className="text-right">
                         <div className="text-2xl font-bold text-blue-600">{avgScore}</div>
                         <div className="text-xs text-gray-500">Average Score</div>
@@ -161,11 +139,11 @@ export default function InterviewDetailPage() {
                     {/* Ratings Breakdown */}
                     {Object.keys(ratings).length > 0 && (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                        {Object.entries(ratings).map(([key, value]) => (
-                          <div key={key} className="text-center p-3 bg-gray-50 rounded-lg">
-                            <div className="text-lg font-semibold text-gray-800">{value}/10</div>
+                        {Object.entries(ratings).map(([category, score]) => (
+                          <div key={category} className="text-center p-3 bg-gray-50 rounded-lg">
+                            <div className="text-lg font-semibold text-gray-800">{score}/10</div>
                             <div className="text-xs text-gray-500 capitalize">
-                              {key.replace(/([A-Z])/g, ' $1').trim()}
+                              {category.replace(/([A-Z])/g, ' $1').trim()}
                             </div>
                           </div>
                         ))}
@@ -195,19 +173,14 @@ export default function InterviewDetailPage() {
                         >
                           {recommendation}
                         </div>
-
                         {recommendationMsg && (
                           <p className="text-sm text-gray-600 mt-1">{recommendationMsg}</p>
                         )}
                       </div>
                     )}
 
-                    {/* ⭐ FIXED CompletedAt timezone */}
                     <div className="text-xs text-gray-400">
-                      Completed:{' '}
-                      {result.completedAt
-                        ? moment.utc(result.completedAt).tz("Asia/Kolkata").format("MMM DD, YYYY hh:mm A")
-                        : 'Not completed'}
+                      Completed: {result.completedAt ? new Date(result.completedAt).toLocaleString() : 'Not completed'}
                     </div>
                   </div>
                 );
